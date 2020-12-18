@@ -1,0 +1,133 @@
+---
+title: "Exam 3 Code"
+author: "Trelan Hakeem-Barron"
+date: "3/27/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(TSA)
+library(forecast)
+library(astsa)
+load(url("http://goo.gl/Zqn3Ea"))
+plot(y01)
+```
+
+## Part A
+# 1)
+
+```{r}
+mymodel = tslm(y01 ~ season)
+s = summary(mymodel)
+s
+```
+
+A model has the form:
+$$
+y(t)=430.65-171.46*season2*x_{(2,t)}-285.21*season3*x_{(3,t)}-113.93*season4*x_{(4,t)}
+$$
+Where season2,season3,season4 are dummy variables (indicators of event) of quarterly 2,3, and 4 respectively.
+
+
+# 2)
+
+Plot of residuals:
+
+```{r}
+plot(s$residuals)
+```
+
+The residuals are non-uniform with respect to zero, therefore only seasonality is not enough to forecast the time series.
+
+ACF:
+
+```{r}
+acf(s$residuals)
+```
+
+The residuals are correlated.
+
+We can conclude that we got a rather bad model. This is also seen from the forecast graph below:
+
+# 3)
+
+```{r}
+forecast(mymodel, h = 8)
+plot(forecast(mymodel, h = 8))
+```
+
+
+## Part B
+
+# 1)
+
+```{r}
+mymodel = arima(y01, order = c(1,1,1), seasonal = list(order = c(1,1,0), period = 4))
+mymodel
+```
+
+A model has the form:
+$$
+(1-0.1505L)(1-L)(1-L^4 )(1-0.0954L^4 )y(t)=\varepsilon_t-0.9312\varepsilon_{(t-1)}
+$$
+where $L$ is Lag-operator.
+
+
+# 2)
+
+```{r}
+sarima(y01, 1,1,1,1,1,0,4)
+```
+
+From the diagnostic graphs, it can be seen that the residues are evenly distributed relative to zero, do not correlate with each other (on the ACF plot, the blue lines do not intersect the black dashed lines), they are almost normally distributed (QC graph).
+
+But on the plot of p-values of the test at points 4, 6, 7, we see the dependence in this time series.
+
+# 3)
+
+The model of part B is better than the model of part A, but it can be improved by choosing the right parameters. One solution to this problem is to use the auto.arima() function
+
+```{r}
+auto.arima(y01,max.p = 10,
+           max.q = 10,
+           max.P = 10,
+           max.Q = 10,
+           max.order = 10,
+           max.d = 10,
+           max.D = 1,
+           start.p = 0,
+           start.q = 0,
+           start.P = 0,
+           start.Q = 0)
+
+mymodel1 = sarima(y01, 1,1,2,0,1,0,4)
+mymodel1
+```
+
+A model has the form:
+$$
+(1-0.4538L)(1-L)(1-L^4 )y(t)=\varepsilon_t-1.6307\varepsilon_{(t-1)}+0.6648\varepsilon_{(t-2)}
+$$
+where $L$ is Lag-operator.
+
+
+Forecast:
+
+```{r}
+sarima.for(y01, 8,  1,1,2,0,1,0,4)
+```
+
+# 4)
+
+```{r}
+sarima.for(y01, 8, 1,1,1,1,1,0,4)
+```
+
+# Part C
+
+Of course, the model of part B is much better than the model of part A. This can be seen both in the forecast graph and in the diagnostic graphs of residuals.
+

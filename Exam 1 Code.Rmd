@@ -1,0 +1,59 @@
+---
+title: "Exam 1 Code"
+author: "Trelan Hakkem-Barron"
+date: "2/7/2020"
+output: html_document
+---
+# Question 1
+By looking at the code below, there seems to be a continuous negative linear trend going on.
+This appears to be a seasonal trend but it is not a clear pattern based on the data being on a complete fixed frequency.
+```{r }
+library(TSA)
+library(tseries)
+library(forecast)
+load(url("http://goo.gl/nGgyoh"))
+months <- c("J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D")
+plot(exam1ts11)
+points(exam1ts11, pch=months)
+```
+
+## Question 1 B)
+exam1ts11
+The period for this time series is from 1981 to 1999. 
+It does appear that this data has a more cyclic pattern going on. The cyclic variation decreases over time. 
+
+
+
+
+By using the Dickey-Fuller Test, we are able to conclude that this time series is indeed stationary
+```{r }
+adf.test(exam1ts11, k=0)
+
+```
+
+```{r }
+acf(exam1ts11)
+```
+The x-axis donates the time lag, while the y-axis displays the estimated autocorrelation. Looking at this data, we can say that each observation is positively related to its recent past observations. However, the correlation decreases as the lag increases. Since it is moving to zero relatively quickly, we can conclude that this time series is stationary. 
+
+# Question 2
+
+So here the estimated slope and intercept are B1 = -3.92862 and B0 = 7754.67728, respectively.
+```{r }
+model1=lm(exam1ts11~time(exam1ts11))
+summary(model1)
+```
+# Question 3
+
+For both of the parameters, the p value is 2e-16. We are able to reject the null hypothesis because the p value passes the significance test for 0.10, 0.05, 0.01, and 0.001.We have a nice model for this time series. Our adjusted R squared also has a value of 0.9029.
+
+# Question 4
+This graph gives us a slightly better insight as to what is going on. It is showing that the declines are happening in various intervals. This could be business data.  
+```{r }
+plot(y=rstudent(model1),x=as.vector(time(exam1ts11)),xlab='Time',
+      ylab='Standardized Residuals',type='l')
+ points(y=rstudent(model1),x=as.vector(time(exam1ts11)),
+         pch=as.vector(season(exam1ts11)))
+
+```
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

@@ -1,0 +1,134 @@
+---
+title: "Final Code"
+author: "Trelan Hakeem-Barron"
+date: "4/22/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+Load data:
+
+```{r}
+library(TSA)
+library(forecast)
+load(url("http://gkerns.people.ysu.edu/examF.RData"))
+```
+
+# 1)
+
+```{r}
+r01_log <- log(r01)
+tm <-cbind(r01, r01_log)
+plot.ts(tm)
+```
+
+The initial time series is not stationary, since the level of the series increases (does not remain constant in time). The variance of the series also seems to be growing.
+
+For the logarithm of the time series, the variance remains approximately constant in time, but the level of the series increases, which indicates its nonstationarity.
+
+Therefore, the stationary model does not seem reasonable only with a logarithmic transformation.
+
+# 2)
+
+```{r}
+r01_log_diff1 = diff(r01_log, differences=1)
+plot.ts(r01_log_diff1)
+```
+
+Upon receipt of the first difference of the log time series, it seems stationary, but at the beginning of the series there is something more than normal variability. This is because the series levels start off so small.
+
+# 3)
+
+```{r}
+plot.ts(r01_log_diff1)
+Month=c('J','F','March','A','M','J','Jul','A','S','O','N','D')
+points(r01_log_diff1,pch=Month)
+
+```
+
+From the above plot, we can conclude that here is the quarterly seasonality (3 months).
+
+# 4)
+
+```{r}
+acf(r01_log_diff1, lag.max=20)             # plot a correlogram
+acf(r01_log_diff1, lag.max=20, plot=FALSE) # get the autocorrelation values
+```
+
+The plot and values of the ACF confirm the assumption of quarterly seasonality. The model has significant lags at 1, 2, 3, and 4.
+
+# 5)
+
+```{r}
+tm1 <-cbind("First\n diff." = r01_log_diff1,
+      "Seasonally\n diff." = diff(r01_log,4))
+plot.ts(tm1, main = "Plot of seasonal differences and first differences") 
+```
+
+As you can see, only seasonal differences are not enough for the time series to be stationary. The first differences give the best result in understanding stationarity.
+
+# 6)
+
+```{r}
+ts = diff(r01_log_diff1,4)
+plot.ts(ts, main = "Plot of seasonal + first differences", ylab = "") 
+```
+
+Upon receipt of the first and seasonal difference of the log time series, it seems stationary. At the beginning of the series there is little big than normal variability. This is because the series levels start near zero and we do a logaritm operation.
+
+# 7)
+
+ARIMA-model:
+
+```{r}
+mymodel = arima(r01, order = c(0,1,1), seasonal = list(order = c(0,1,1), period = 4))
+mymodel
+```
+
+The p-value of parameters for ARIMA model:
+
+
+```{r}
+(1-pnorm(abs(mymodel$coef)/sqrt(diag(mymodel$var.coef))))*2
+```
+
+or by the other way:
+
+```{r}
+library(lmtest)
+coeftest(mymodel)
+```
+
+Thus, the coeficient ma1 is significant (its p-value is less than the significance level $\alpha=0.05$). But the coeficient sma1 is insignificant.
+
+# 8)
+
+Diagnostic Checking:
+
+```{r}
+library(astsa)
+sarima(r01, 0,1,1,0,1,1,4)
+```
+
+From the diagnostic plots, it can be seen that the residues are evenly distributed relative to zero, do not correlate with each other (on the ACF plot, the black lines do not intersect the blue dashed lines), they are almost normally distributed (QQ plot).
+But on the plot of p-values of the test starting from point 10 we see the dependence in this time series.
+
+# 9)
+
+```{r}
+sarima(r01, 0,1,2,0,1,1,4)
+```
+
+When we compare these results with those reported in previous paragraph, we see that the estimates of $\theta_1$ and $\theta$ have changed very little—especially when the size of the standard errors is taken into consideration. In addition, the estimate of the new parameter, $\theta_2$, is not statistically different from zero. Note also that the estimate, the log-likelihood, and AIC have not changed much.
+
+# 10)
+
+Forecasts for the next two years of the series:
+
+```{r}
+sarima.for(r01, 8, 0,1,1,0,1,1,4)
+```
+
